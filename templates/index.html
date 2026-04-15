@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quantum Legal NLP</title>
+</head>
+<body>
+
+<h2>Quantum Legal Text Classifier</h2>
+
+<textarea id="text" rows="6" cols="60"></textarea><br><br>
+
+<button onclick="analyze()">Analyze</button>
+
+<h3>Output:</h3>
+<pre id="output">Waiting for result...</pre>
+
+<script>
+async function analyze() {
+    let text = document.getElementById("text").value;
+
+    if (!text) {
+        alert("Please enter text");
+        return;
+    }
+
+    document.getElementById("output").innerText = "Processing...";
+
+    try {
+        let response = await fetch("/predict", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ text: text })
+        });
+
+        let data = await response.json();
+
+        document.getElementById("output").innerText =
+            JSON.stringify(data, null, 2);
+
+    } catch (error) {
+        console.error(error);
+        document.getElementById("output").innerText =
+            "Error: " + error;
+    }
+}
+</script>
+
+</body>
+</html>
