@@ -1,17 +1,23 @@
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-from flask import Flask, request, jsonify
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import math
 
 app = Flask(__name__)
 CORS(app)
-# Load model once
+
+# =====================
+# LOAD MODEL
+# =====================
 model_name = "gpt2"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
 model.eval()
 
+# =====================
+# FUNCTIONS
+# =====================
 def get_next_token_topk(text, topk=5):
     inputs = tokenizer(text, return_tensors="pt", truncation=True)
     with torch.no_grad():
@@ -28,10 +34,17 @@ def simulated_quantum_runtime(R=50, n=5, k=2.9):
     f = math.log(HR_k2 / (HR_k**0.5)) / math.log(R)
     return {"f": f}
 
+# =====================
+# ROUTES
+# =====================
+@app.route("/")
+def home():
+    return render_template("index.html")
+
 @app.route("/predict", methods=["POST"])
 def predict():
     data = request.json
-    text = data["text"]
+    text = data.get("text", "")
 
     tokens = get_next_token_topk(text)
     quantum = simulated_quantum_runtime()
@@ -41,9 +54,8 @@ def predict():
         "quantum": quantum
     })
 
+# =====================
+# RUN SERVER
+# =====================
 if __name__ == "__main__":
     app.run(debug=True)
-from flask import render_template
-@app.route("/")
-def home():
-    return render_template("index.html")
