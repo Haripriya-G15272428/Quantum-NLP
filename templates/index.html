@@ -30,11 +30,16 @@
 
 <div class="container mt-5">
 
-    <div class="text-center mb-4">
-        <h1>⚖️ Quantum Legal Text Classifier</h1>
-        <p class="text-secondary">AI + Quantum Simulation Analysis</p>
+    <!-- 🔥 HEADER WITH LOGOUT -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>⚖️ Quantum Legal Text Classifier</h1>
+            <p class="text-secondary mb-0">AI + Quantum Simulation Analysis</p>
+        </div>
+        <a href="/logout" class="btn btn-danger">Logout</a>
     </div>
 
+    <!-- INPUT CARD -->
     <div class="card p-4 shadow-lg bg-dark">
 
         <label class="form-label">Enter Legal Text</label>
@@ -47,6 +52,7 @@
 
     </div>
 
+    <!-- OUTPUT -->
     <div class="mt-4">
         <h4>📊 Output</h4>
         <pre id="output">Waiting for analysis...</pre>
@@ -64,9 +70,9 @@ async function analyze() {
     }
 
     document.getElementById("output").innerHTML = `
-<div class="spinner-border text-light"></div>
-<p>Analyzing...</p>
-`;
+        <div class="spinner-border text-light"></div>
+        <p>Analyzing...</p>
+    `;
 
     try {
         let response = await fetch("/predict", {
@@ -79,7 +85,6 @@ async function analyze() {
 
         let data = await response.json();
 
-        // Format output nicely
         let result = "Top Tokens:\n";
         data.tokens.forEach(t => {
             result += t[0] + " : " + t[1].toFixed(4) + "\n";

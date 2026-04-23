@@ -1,23 +1,40 @@
-from flask import Flask, request, jsonify, render_template
-from flask_cors import CORS
+from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 import math
+import os
 
 app = Flask(__name__)
-CORS(app)
+app.secret_key = "secret123"
 
-# =====================
-# LOAD MODEL
-# =====================
-model_name = "gpt2"
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+
+# --------------------
+# USER STORAGE (simple)
+# --------------------
+users = {}
+
+class User(UserMixin):
+    def __init__(self, username):
+        self.id = username
+
+@login_manager.user_loader
+def load_user(user_id):
+    if user_id in users:
+        return User(user_id)
+    return None
+
+# --------------------
+# MODEL (LIGHT VERSION)
+# --------------------
+model_name = "distilgpt2"   # 🔥 lighter model for deployment
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
 model.eval()
 
-# =====================
-# FUNCTIONS
-# =====================
 def get_next_token_topk(text, topk=5):
     inputs = tokenizer(text, return_tensors="pt", truncation=True)
     with torch.no_grad():
@@ -34,14 +51,50 @@ def simulated_quantum_runtime(R=50, n=5, k=2.9):
     f = math.log(HR_k2 / (HR_k**0.5)) / math.log(R)
     return {"f": f}
 
-# =====================
-# ROUTES
-# =====================
+# --------------------
+# AUTH ROUTES
+# --------------------
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        if username in users and users[username] == password:
+            login_user(User(username))
+            return redirect(url_for("home"))
+        else:
+            return render_template("login.html", error="Invalid credentials")
+
+    return render_template("login.html")
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        users[username] = password
+        return redirect(url_for("login"))
+
+    return render_template("register.html")
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("login"))
+
+# --------------------
+# MAIN APP (protected)
+# --------------------
 @app.route("/")
+@login_required
 def home():
     return render_template("index.html")
 
 @app.route("/predict", methods=["POST"])
+@login_required
 def predict():
     data = request.json
     text = data.get("text", "")
@@ -54,8 +107,9 @@ def predict():
         "quantum": quantum
     })
 
-# =====================
-# RUN SERVER
-# =====================
+# --------------------
+# RUN (PRODUCTION READY)
+# --------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Render provides PORT
+    app.run(host="0.0.0.0", port=port)
