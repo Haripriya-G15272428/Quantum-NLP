@@ -11,17 +11,21 @@
             background: #0f172a;
             color: white;
         }
+
         .card {
             border-radius: 15px;
         }
+
         textarea {
             resize: none;
         }
+
         #output {
             background: #111827;
             color: #22c55e;
             padding: 15px;
             border-radius: 10px;
+            white-space: pre-wrap;
         }
     </style>
 </head>
@@ -30,21 +34,27 @@
 
 <div class="container mt-5">
 
-    <!-- 🔥 HEADER WITH LOGOUT -->
+    <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1>⚖️ Quantum Legal Text Classifier</h1>
             <p class="text-secondary mb-0">AI + Quantum Simulation Analysis</p>
         </div>
+
         <a href="/logout" class="btn btn-danger">Logout</a>
     </div>
 
-    <!-- INPUT CARD -->
+    <!-- Input Card -->
     <div class="card p-4 shadow-lg bg-dark">
 
         <label class="form-label">Enter Legal Text</label>
-        <textarea id="text" class="form-control mb-3" rows="5"
-        placeholder="Paste legal document or case text..."></textarea>
+
+        <textarea
+            id="text"
+            class="form-control mb-3"
+            rows="5"
+            placeholder="Paste legal document or case text..."
+        ></textarea>
 
         <button onclick="analyze()" class="btn btn-primary w-100">
             🔍 Analyze
@@ -52,7 +62,7 @@
 
     </div>
 
-    <!-- OUTPUT -->
+    <!-- Output -->
     <div class="mt-4">
         <h4>📊 Output</h4>
         <pre id="output">Waiting for analysis...</pre>
@@ -62,7 +72,8 @@
 
 <script>
 async function analyze() {
-    let text = document.getElementById("text").value;
+
+    let text = document.getElementById("text").value.trim();
 
     if (!text) {
         alert("Please enter text");
@@ -75,19 +86,26 @@ async function analyze() {
     `;
 
     try {
+
         let response = await fetch("/predict", {
             method: "POST",
+            credentials: "same-origin",
             headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({ text: text })
         });
 
+        if (!response.ok) {
+            throw new Error("Server returned " + response.status);
+        }
+
         let data = await response.json();
 
         let result = "Top Tokens:\n";
-        data.tokens.forEach(t => {
-            result += t[0] + " : " + t[1].toFixed(4) + "\n";
+
+        data.tokens.forEach(token => {
+            result += token[0] + " : " + token[1].toFixed(4) + "\n";
         });
 
         result += "\nQuantum Score:\n";
@@ -96,8 +114,9 @@ async function analyze() {
         document.getElementById("output").innerText = result;
 
     } catch (error) {
+
         document.getElementById("output").innerText =
-            "❌ Error: " + error;
+            "❌ Error: " + error.message;
     }
 }
 </script>
